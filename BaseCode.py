@@ -1,138 +1,141 @@
-# ============================================
-# 1. IMPORT LIBRARIES
-# ============================================
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import datasets, transforms, models
+import torchvision
+import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
+from torchvision.models import resnet18
 
-# ============================================
-# 2. DEVICE (GPU IF AVAILABLE)
-# ============================================
+# ======================
+# Device (GPU)
+# ======================
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", device)
 
-# ============================================
-# 3. DATA TRANSFORMS
-# ============================================
-transform = transforms.Compose([
-    transforms.Resize((64, 64)),   # lightweight for speed
-    transforms.ToTensor()
+# ======================
+# CIFAR-100 Data
+# ======================
+transform_train = transforms.Compose([
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=(0.5071, 0.4867, 0.4408),
+        std=(0.2675, 0.2565, 0.2761)
+    )
 ])
 
-# ============================================
-# 4. LOAD CIFAR-100 DATASET
-# ============================================
-train_dataset = datasets.CIFAR100(
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=(0.5071, 0.4867, 0.4408),
+        std=(0.2675, 0.2565, 0.2761)
+    )
+])
+
+trainset = torchvision.datasets.CIFAR100(
     root="./data",
     train=True,
     download=True,
-    transform=transform
+    transform=transform_train
 )
 
-test_dataset = datasets.CIFAR100(
+testset = torchvision.datasets.CIFAR100(
     root="./data",
     train=False,
     download=True,
-    transform=transform
+    transform=transform_test
 )
 
-train_loader = DataLoader(
-    train_dataset,
-    batch_size=64,        # larger batch since GPU
-    shuffle=True,
-    num_workers=2,
-    pin_memory=True
-)
+trainloader = DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
+testloader = DataLoader(testset, batch_size=128, shuffle=False, num_workers=2)
 
-test_loader = DataLoader(
-    test_dataset,
-    batch_size=64,
-    shuffle=False,
-    num_workers=2,
-    pin_memory=True
-)
-
-print("CIFAR-100 dataset loaded")
-
-# ============================================
-# 5. LOAD PRETRAINED RESNET-18
-# ============================================
-model = models.resnet18(pretrained=True)
-
-# Freeze all layers
-for param in model.parameters():
-    param.requires_grad = False
-
-# Replace final FC layer
-num_classes = 100
-model.fc = nn.Linear(model.fc.in_features, num_classes)
-
+# ======================
+# ResNet-18 Model
+# ======================
+model = resnet18(pretrained=False)
+model.fc = nn.Linear(model.fc.in_features, 100)  # CIFAR-100 classes
 model = model.to(device)
-print("ResNet-18 model ready")
 
-# ============================================
-# 6. LOSS FUNCTION AND OPTIMIZER
-# ============================================
+# ======================
+# Loss & Classical Optimizer
+# ======================
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.fc.parameters(), lr=0.01, momentum=0.9)
 
-# ============================================
-# 7. TRAINING LOOP (NORMAL TRAINING)
-# ============================================
-epochs = 5
-train_losses = []
+optimizer = optim.SGD(
+    model.parameters(),
+    lr=0.1,
+    momentum=0.9,
+    weight_decay=5e-4
+)
 
-for epoch in range(epochs):
+scheduler = optim.lr_scheduler.StepLR(
+    optimizer,
+    step_size=30,
+    gamma=0.1
+)
+
+# ======================
+# Training Function
+# ======================
+def train_one_epoch(model, loader):
     model.train()
+    correct = 0
+    total = 0
     running_loss = 0.0
 
-    for images, labels in train_loader:
-        images = images.to(device, non_blocking=True)
-        labels = labels.to(device, non_blocking=True)
+    for images, labels in loader:
+        images, labels = images.to(device), labels.to(device)
 
         optimizer.zero_grad()
         outputs = model(images)
         loss = criterion(outputs, labels)
-
         loss.backward()
         optimizer.step()
 
         running_loss += loss.item()
-
-    avg_loss = running_loss / len(train_loader)
-    train_losses.append(avg_loss)
-
-    print(f"Epoch [{epoch+1}/{epochs}] - Loss: {avg_loss:.4f}")
-
-# ============================================
-# 8. TESTING LOOP
-# ============================================
-model.eval()
-correct = 0
-total = 0
-
-with torch.no_grad():
-    for images, labels in test_loader:
-        images = images.to(device, non_blocking=True)
-        labels = labels.to(device, non_blocking=True)
-
-        outputs = model(images)
-        _, predicted = torch.max(outputs, 1)
+        _, predicted = outputs.max(1)
         total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+        correct += predicted.eq(labels).sum().item()
 
-accuracy = 100 * correct / total
-print(f"Test Accuracy on CIFAR-100: {accuracy:.2f}%")
+    acc = 100.0 * correct / total
+    return running_loss / len(loader), acc
 
-# ============================================
-# 9. PLOT TRAINING LOSS
-# ============================================
-plt.plot(train_losses, marker='o')
-plt.title("Training Loss (ResNet-18 on CIFAR-100, GPU)")
-plt.xlabel("Epoch")
-plt.ylabel("Loss")
-plt.grid(True)
-plt.show()
+# ======================
+# Testing Function
+# ======================
+def evaluate(model, loader):
+    model.eval()
+    correct = 0
+    total = 0
+    loss_total = 0.0
+
+    with torch.no_grad():
+        for images, labels in loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+
+            loss_total += loss.item()
+            _, predicted = outputs.max(1)
+            total += labels.size(0)
+            correct += predicted.eq(labels).sum().item()
+
+    acc = 100.0 * correct / total
+    return loss_total / len(loader), acc
+
+# ======================
+# Training Loop
+# ======================
+EPOCHS = 50
+
+for epoch in range(EPOCHS):
+    train_loss, train_acc = train_one_epoch(model, trainloader)
+    test_loss, test_acc = evaluate(model, testloader)
+    scheduler.step()
+
+    print(
+        f"Epoch [{epoch+1}/{EPOCHS}] | "
+        f"Train Acc: {train_acc:.2f}% | "
+        f"Test Acc: {test_acc:.2f}%"
+    )
