@@ -156,7 +156,7 @@ The implementation is intended for **academic and educational purposes**.
 ---
 
 ##  Acknowledgements
-
+* https://github.com/kkClasses/FSCIL_github/
 * Faculty guidance and support
 * PyTorch and open-source community
 * Research literature on quantum-inspired optimization
