@@ -10,8 +10,9 @@ The project compares **normal gradient-based training** with a **quantum-inspire
 ##  Team Members
 
 * Kandregula Vishal Karthik – N210037
-* Member 2 – *Name* (Roll No)
-* Member 3 – *Name* (Roll No)
+* Ramagiri Praneetha – N210477
+* Koduri Ramya – N210
+* Pranathi - N21
 
 > **Guide:** KK Sing sir
 > **Institution:** *RGUKT*
