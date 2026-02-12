@@ -5,7 +5,7 @@
 | No freezing                                   | 94.64%                | 77.14%               | Yes           |
 | Freezing layer 1                              | 91.87%                |76.08%                |Yes           |
 | Freezing layer 2                              | -                     | -                    | -           |
-| Freezing layer 3                              | -                     | -                    | -           |
+| Freezing layer 3                              | 93.29%                    |78.29%                   | Yes           |
 | Freezing layer 4                              | -                     | -                    | -           |
 | Freezing layer 1 & 2                          | -                     | -                    | -           |
 | Freezing layer 1 & 2 & 3                      | -                     | -                    | -           |
