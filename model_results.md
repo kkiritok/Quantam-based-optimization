@@ -2,8 +2,8 @@
 
 | Model Config                                   | Training Accuracy (%) | Testing Accuracy (%) | Overfitting |
 |-----------------------------------------------|-----------------------|----------------------|-------------|
-| No freezing                                   | 94.64%                | 77.14%                   | Yes           |
-| Freezing layer 1                              | -                     | -                    | -           |
+| No freezing                                   | 94.64%                | 77.14%               | Yes           |
+| Freezing layer 1                              | 91.87%                |76.08%                |Yes           |
 | Freezing layer 2                              | -                     | -                    | -           |
 | Freezing layer 3                              | -                     | -                    | -           |
 | Freezing layer 4                              | -                     | -                    | -           |
