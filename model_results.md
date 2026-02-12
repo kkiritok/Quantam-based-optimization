@@ -9,5 +9,5 @@
 | Freezing layer 4                              | -                     | -                    | -           |
 | Freezing layer 1 & 2                          | -                     | -                    | -           |
 | Freezing layer 1 & 2 & 3                      | -                     | -                    | -           |
-| Freezing layer 1 & 2 & 3 & 4                  | -                     | -                    | -           |
-| Incremental freezing of layers (all)          | -                     | -                    | -           |
+| Freezing layer 1 & 2 & 3 & 4                  | -                     | -                    | Yes          |
+| Incremental freezing of layers (all)          | 57.72%                     | 55.29%                    | No           |
